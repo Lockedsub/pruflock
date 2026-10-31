@@ -1,0 +1,11 @@
+{
+  "name": "PrufLock",
+  "version": "dev",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [{ "path": "pruflock.bin", "offset": 0 }]
+    }
+  ]
+}

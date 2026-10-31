@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PrufLock Flasher</title>
+<script type="module" src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
+<style>
+  :root { --bg: #fff; --fg: #1b1b1b; --muted: #666; --accent: #e67300; --border: #ddd; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #111; --fg: #eee; --muted: #999; --accent: #ff8800; --border: #333; }
+  }
+  :root[data-theme="dark"] { --bg: #111; --fg: #eee; --muted: #999; --accent: #ff8800; --border: #333; }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.5 -apple-system, system-ui, sans-serif;
+         max-width: 36rem; margin: 2rem auto; padding: 0 16px; }
+  h1 { margin-bottom: .25rem; }
+  .muted { color: var(--muted); }
+  ol li { margin: .4rem 0; }
+  esp-web-install-button button[slot="activate"] { background: var(--accent); color: #000; border: 0;
+         border-radius: 8px; padding: .8rem 1.4rem; font-size: 1.05rem; cursor: pointer; }
+  .box { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+<h1>PrufLock</h1>
+<p class="muted">Firmware for the LilyGO TTGO T-Display inspection-code badge.</p>
+
+<div class="box">
+  <esp-web-install-button manifest="manifest.json">
+    <button slot="activate">Install firmware</button>
+    <span slot="unsupported">This browser can't flash over USB. Use Chrome or Edge on a computer.</span>
+    <span slot="not-allowed">Flashing needs a secure (https) page.</span>
+  </esp-web-install-button>
+</div>
+
+<ol>
+  <li>Connect the T-Display with a USB-C <em>data</em> cable.</li>
+  <li>Click <b>Install firmware</b> and pick the serial port (CP2104 / "USB to UART").
+    If none shows up, install the
+    <a href="https://www.silabs.com/developer-tools/usb-to-uart-bridge-vcp-drivers">CP210x driver</a>.</li>
+  <li>To update a badge that is already set up, don't erase: it keeps its settings.</li>
+  <li>After a new install, the badge opens its setup Wi-Fi <b>PrufLock</b>. The display shows the password.
+    Join it with your phone and fill in the form.</li>
+</ol>
+<p class="muted">Source and documentation: <a href="https://github.com/Lockedsub/pruflock">github.com/Lockedsub/pruflock</a></p>
+</body>
+</html>

@@ -1,0 +1,92 @@
+# Builds the firmware on every pull request and push to main. A tag v1.2.3 also publishes
+# pruflock-1.2.3.bin as a GitHub Release and deploys the browser flasher (docs/flash/) to GitHub
+# Pages with that image. One-time setup: Settings → Pages → Source: GitHub Actions, and a tag rule
+# v* under Settings → Environments → github-pages (see CONTRIBUTING.md).
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio==6.2.0
+
+      - name: Version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            v="${GITHUB_REF_NAME#v}"
+          else
+            v="$(sed -n 's/^#define FW_VERSION "\(.*\)"/\1/p' src/config.h)-${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: pio run
+        env:
+          PLATFORMIO_BUILD_FLAGS: -DFW_VERSION=\"${{ env.VERSION }}\"
+
+      # firmware.factory.bin = bootloader + partitions + app, flashed at offset 0.
+      - name: Collect
+        run: |
+          mkdir -p dist
+          cp .pio/build/ttgo-t-display/firmware.factory.bin "dist/pruflock-$VERSION.bin"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pruflock-${{ env.VERSION }}
+          path: dist/
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: gh release create "$GITHUB_REF_NAME" "dist/pruflock-$VERSION.bin" --title "PrufLock $VERSION" --notes "See CHANGELOG.md."
+        env:
+          GH_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
+
+  pages:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Assemble flasher
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          mkdir -p site
+          cp docs/flash/index.html site/
+          cp "dist/pruflock-$v.bin" site/pruflock.bin
+          sed "s/\"version\": \"dev\"/\"version\": \"$v\"/" docs/flash/manifest.json > site/manifest.json
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v5
